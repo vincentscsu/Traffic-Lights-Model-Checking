@@ -36,7 +36,7 @@ mtype sI; /* intersection status */
 */
 
 /* other global variables of your own */
-... 
+
 mtype ack; /* acknowledgement from lightset to intersection */
 bool pOn; /* on/off for pedestrian light */ 
 
@@ -49,65 +49,69 @@ chan to_intersection = [1] of { mtype };
 /* you’ll need plenty of macros to keep your model organized, clean, non-redundant */
 
 inline xyz() { 
- ... 
-}
-
-...
+} 
 
 inline abc() {
- ... 
-}
-
-... 
+} 
 
 /* proctype definitions  */
 
 proctype Intersection() {
 	 /* inifinte loop */
-	do
-	:: sI == ENABLED -> 
-	   to_linearlightset!INIT -> to_intersection?ack;
-	   to_turnlightset!INIT -> to_intersection?ack;		    
-	   do 
-	   :: to_linearlightset!ADVANCE; 
-		  to_intersection?ack -> 
-		  to_linearlightset!ALL_STOP;
-		  to_intersection?ack ->
-		  
-	   	  to_turnlightset!ADVANCE; 
-		  to_intersection?ack ->   
 
-	   	  pOn = true;
-	   od
-	od	 
+	   sI == ENABLED; 
+	   to_linearlightset!INIT; ->
+	   							 do	/* check if there is a message to receive */   						
+	   							 :: len(to_intersection) > 0 -> to_intersection?ack ->
+								    to_turnlightset!INIT; 
+								    do /* check if there is a message to receive */
+								    :: len(to_intersection) > 0 -> to_intersection?ack ->								    		    
+									   do 
+									   :: to_linearlightset!ADVANCE; 
+										  to_intersection?ack -> 
+										  to_linearlightset!ALL_STOP;
+										  to_intersection?ack ->
+										  
+									   	  to_turnlightset!ADVANCE; 
+										  to_intersection?ack ->   
+									   	  pOn = true;
+									   	  
+									   od
+									 od
+								  :: skip;
+								  od
 }
-
-proctype LinearLightSet(bit i) { /* model only one light in one lightset because they run sequentially */
-	to_linearlightset?INIT -> d_step { sL[0].v[0] = RED -> sL[0].p[0] = DONT_WALK -> pOn = false; }			
+   
+proctype LinearLightSet() { /* model only one light in one lightset because they run sequentially */
+	to_linearlightset?INIT -> d_step { sL[0].v[0] = RED -> sL[0].p[0] = DONT_WALK -> pOn = false; to_intersection!ack;}			
 		   
 	do
-	:: to_linearlightset?ADVANCE -> 
-	   d_step { sL[0].v[0] = GREEN -> sL[0].p[0] = DONT_WALK }  
-	   to_linearlightset!PRE_STOP;
-	:: to_linearlightset?PRE_STOP -> 
-	   d_step { sL[0].v[0] = ORANGE -> sL[0].p[0] = DONT_WALK };
-	   to_linearlightset!STOP;
-	:: to_linearlightset?STOP -> 
-	   d_step { sL[0].v[0] = RED -> if 
-	    							  :: pOn == true -> sL[0].p[0] = WALK; 
+	  :: to_linearlightset?ADVANCE -> 
+	     d_step { sL[0].v[0] = GREEN -> sL[0].p[0] = DONT_WALK }  
+	  	 to_linearlightset!PRE_STOP;
+	  :: to_linearlightset?PRE_STOP -> 
+	     d_step { sL[0].v[0] = ORANGE -> sL[0].p[0] = DONT_WALK };
+	     to_linearlightset!STOP;
+	  :: to_linearlightset?STOP -> 
+	     d_step { sL[0].v[0] = RED -> if 
+	     							  :: pOn == true -> sL[0].p[0] = WALK; 
 	     							  fi }
-	   to_intersection!ack;
-	:: to_linearlightset?ALL_STOP -> d_step { sL[0].v[0] = RED -> sL[0].p[0] = DONT_WALK -> pOn = false }; 
-	   to_intersection!ack;
+	     to_intersection!ack;
+	  :: to_linearlightset?ALL_STOP -> d_step { sL[0].v[0] = RED -> sL[0].p[0] = DONT_WALK -> pOn = false; };
+	     to_intersection!ack;
 	od
 }
 
-proctype TurnLightSet(bit i) { /* model only one light in one lightset because they run sequentially */
-	to_turnlightset?INIT -> sT[0].v[0] = RED;
+proctype TurnLightSet() { /* model only one light in one lightset because they run sequentially */
+	to_turnlightset?INIT -> d_step { sT[0].v[0] = RED -> to_intersection!ack; }
 
 	do
-	:: to_turnlightset?ADVANCE -> sT[0].v[0] = GREEN; to_turnlightset!PRE_STOP;
-	:: to_turnlightset?PRE_STOP -> sT[0].v[0] = ORANGE; to_turnlightset!STOP;
-	:: to_turnlightset?STOP -> sT[0].v[0] = RED; to_intersection!ack;
+	  :: to_turnlightset?ADVANCE -> sT[0].v[0] = GREEN; to_turnlightset!PRE_STOP;
+	  :: to_turnlightset?PRE_STOP -> sT[0].v[0] = ORANGE; to_turnlightset!STOP;
+	  :: to_turnlightset?STOP -> sT[0].v[0] = RED; to_intersection!ack;
 	od	
+}
+
+proctype sIenable() {
+	sI = ENABLED;
 }
