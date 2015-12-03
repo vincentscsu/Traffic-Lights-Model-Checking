@@ -1,14 +1,9 @@
 #include "TrafficLights.pml"
 
-ltl disableSuccess { ... }; /* this is needed by Vocareum */
-/* other properties of your own that won’t be checked by Vocareum */
-ltl ... { ... }
-ltl ... { ... }  
+ltl disableSuccess { <>(sL[0].s == OFF) }; /* this is needed by Vocareum */
 
 init {
 	run Intersection();
-	enableI(); /* statements or macro that enables intersection */
-	disableI(); /* statements or macro that disables intersection */
+	run enableI(); /* statements or macro that enables intersection */
+	run disableI(); /* statements or macro that disables intersection */
 }
-
-

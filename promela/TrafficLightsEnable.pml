@@ -2,18 +2,29 @@
 
 /* ltl */
 ltl safePedestrian { []((sL[0].p[0] == WALK) -> (sL[0].v[0] == RED && sT[0].v[0] == RED)) } /* when WALK, all lights must be RED */
-/*ltl safeStraigthTraffic {  } */
-/* variation of above for other lights, your properties, won’t be checked by Vocareum */
-/*ltl safePedestrian01 { ... }*/
-/*ltl safePedestrian11 { ... }*/  
-/*ltl safeStraightTraffic { ...  }; /* this is needed by Vocareum */
-/* and so on */
+ltl safeStraightTraffic { []((sL[0].v[0] == GREEN) -> (sL[1].v[0] == RED && sL[1].v[1] == RED && sT[1].v[0] == RED && sT[1].v[1] == RED)) } /* when an sL is GREEN, all v lights in the other sL and sT should be RED */ 
+ltl safeLeftTurn { []((sT[0].v[0] == GREEN) -> (sL[1].v[0] == RED && sL[1].v[1] == RED && sT[1].v[0] == RED && sT[1].v[1] == RED)) } /* when an sT is GREEN, all v lights in the other sL and sT should be RED */ 
+/*<>P -> (!P U (S & !P))*/
+ltl pedestrianDelay { [] (<> (sL[0].p[0] == WALK) -> ((sL[0].p[0] == DONT_WALK) U ((sL[0].v[0] == RED && sT[0].v[0] == RED && sL[0].v[1] == RED && sT[0].v[1] == RED) & (sL[0].p[0] == DONT_WALK)))) } /* when WALK, all lights must be RED */
+/*
+ltl straightTrafficDelay
+ltl leftTurnDelay
+*/
 
+/* always eventually crossing the intersection */
+ltl productivePedestrian { []<> (sL[0].p[0] == WALK)}
+ltl productiveStraightGoingVehicle { []<> (sL[0].v[0] == GREEN) } 
+ltl productiveLeftTurningVehicle { []<> (sT[0].v[0] == GREEN) }
+
+/* light stays the same until the next color */
+ltl signalOrderOrange { []((sL[0].v[0] == GREEN) -> (sL[0].v[0] == GREEN) U (sL[0].v[0] == ORANGE)) } 
+ltl signalOrderRed { []((sL[0].v[0] == ORANGE) -> (sL[0].v[0] == ORANGE) U (sL[0].v[0] == RED)) }
+ltl signalOrderGreen { []((sL[0].v[0] == RED) -> (sL[0].v[0] == RED) U (sL[0].v[0] == GREEN)) }
 
 init {	
 	run Intersection();
 	/* statements or macro that enables intersection */
-	run sIenable();
+	run enableI();
 	run LinearLightSet(0);
 	run LinearLightSet(1);
 	run TurnLightSet(0);
